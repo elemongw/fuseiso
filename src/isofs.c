@@ -523,12 +523,14 @@ static time_t isofs_date(char *stamp, int stamp_len) {
 static int isofs_direntry2stat(struct stat *st, isofs_inode *inode) {
     struct iso_directory_record *record = inode->record;
     
-    // fill st_ino from block number where file start
-    // since there is no files begin in the same block
-    // st->st_ino = isonum_733(record->extent);
-    // but some iso images save space by sharing content between several files
-    // so it is better to save it unique
-    st->st_ino = inode->st_ino;
+    // For regular files, use a unique inode number
+    // For hardlinked files (when PX record is present and nlink > 1),
+    // use the extent location as the inode number
+    if(inode->PX && inode->st.st_nlink > 1) {
+        st->st_ino = isonum_733(record->extent);
+    } else {
+        st->st_ino = inode->st_ino;
+    }
     
     if(inode->ZF) { // compressed file, report real (uncompressed) size
         st->st_size = inode->real_size;
@@ -544,6 +546,7 @@ static int isofs_direntry2stat(struct stat *st, isofs_inode *inode) {
         st->st_mode = inode->st.st_mode;
         st->st_uid = inode->st.st_uid;
         st->st_gid = inode->st.st_gid;
+        st->st_nlink = inode->st.st_nlink;
     } else {
         /// TODO use hidden flag?
         if(ISO_FLAGS_DIR(record->flags)) {
