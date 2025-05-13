@@ -1483,6 +1483,15 @@ int isofs_real_readdir(const char *path, void *filler_buf, isofs_dir_fill_t fill
                 };
             };
             
+            // Skip entries that are in rr_moved directory
+            if(strstr(path, "/rr_moved") != NULL) {
+                isofs_free_inode(inode);
+                boff += record_length;
+                total_size += record_length;
+                count++;
+                continue;
+            }
+            
             char *entry = (char *) malloc(NAME_MAX);
             if(!entry) {
                 perror("Can`t malloc: ");
