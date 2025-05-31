@@ -1,0 +1,5 @@
+option('static_build',
+  type : 'boolean',
+  value : false,
+  description : 'Build with static linking'
+)
